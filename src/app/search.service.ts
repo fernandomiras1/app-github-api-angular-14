@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpParams } from "@angular/common/http";
-import { Observable, ReplaySubject } from "rxjs";
-import { map } from "rxjs/operators";
+import { Observable, of, ReplaySubject } from "rxjs";
+import { catchError, map } from "rxjs/operators";
 import { environment } from "../environments/environment";
 import { GithubApi, GithubUser } from "./interfaces";
 
@@ -15,10 +15,13 @@ export class SearchService {
 
   search(value: string, pageNumber = 1): Observable<GithubApi> {
     return this.http
-      .get<GithubApi>(`${environment.apiUrl}search/users?q=${value} in:login`, {
+      .get<GithubApi>(`${environment.apiUrl}/search/users?q=${value}`, {
         params: this.getHttpParams(String(pageNumber)),
       })
-      .pipe(map((res: GithubApi) => this.parseData(res)));
+      .pipe(
+        map((res: GithubApi) => this.parseData(res)),
+        catchError(() => of({ items: [], total_count: 0 }))
+      );
   }
 
   private parseData(item: GithubApi): GithubApi {
